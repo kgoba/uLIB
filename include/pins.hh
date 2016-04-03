@@ -1,7 +1,7 @@
 #include <avr/io.h>
 
-#include "util"
-#include "types"
+#include "util.hh"
+#include "types.hh"
 
 template<int pin>
 class IOPin {
@@ -68,27 +68,30 @@ protected:
 
 Example:
 
-InputPin<2, true> pin;      // active low (default high)
-pin.setup(true);      // enable pullup (no pullup by default)
+InputPin<2, kActiveLow, kPullup> pin;      // active low (default high), enable pullup (no pullup by default)
+pin.setup();      // 
 if (pin.get()) doSomething();
 
  */
 
-typedef enum { kLow = 0, kHigh = 1 } LogicLevel;
+typedef enum { kActiveLow = 0, kActiveHigh = 1 } LogicLevel;
 typedef enum { kNoPullup = 0, kPullup = 1 } PullupMode;
 
-template<int pin, LogicLevel activeLevel = kHigh, PullupMode pullup = kNoPullup>
+template<int pin, LogicLevel activeLevel = kActiveHigh, PullupMode pullup = kNoPullup>
 class InputPin : public IOPin<pin> {
 public:
         
   static void setup() {
     if (!IOPin<pin>::isValid()) return;
     bit_clear(*IOPin<pin>::regDDR(), IOPin<pin>::bit());
-    if (pullup == kPullup) bit_set(*IOPin<pin>::regPORT(), IOPin<pin>::bit());
+    setPullup(pullup);
   }
   static bool get() {
     if (!IOPin<pin>::isValid()) return false;
-    return (activeLevel == kLow) ^ IOPin<pin>::getInput();
+    return (activeLevel == kActiveLow) ^ IOPin<pin>::getInput();
+  }
+  static void setPullup(bool enabled) {
+    IOPin<pin>::setOutput(enabled);
   }
   static bool enablePCInt() {
     bit_set(PCICR, IOPin<pin>::pcIntBit());
@@ -100,7 +103,7 @@ public:
   }
 };
 
-template<int pin, byte debounce, LogicLevel activeLevel = kHigh, PullupMode pullup = kNoPullup>
+template<int pin, byte debounce, LogicLevel activeLevel = kActiveHigh, PullupMode pullup = kNoPullup>
 class InputDebouncePin : public InputPin<pin, activeLevel, pullup> {
 public:
 
@@ -135,14 +138,14 @@ bool InputDebouncePin<pin, debounce, activeLevel, pullup>::_on = false;
 
 Example:
 
-OutputPin<2, true> pin;      // active low (default high)
+OutputPin<2, kActiveHigh> pin;      // active low (default high)
 pin.setup(true);             // initial on
 doSomething();
 pin.off();                  // switch off
 
  */
 
-template<int pin, LogicLevel activeLevel = kHigh>
+template<int pin, LogicLevel activeLevel = kActiveHigh>
 class OutputPin : public IOPin<pin> {
 public:
   static void setup(bool initialOn = false) {
@@ -151,7 +154,7 @@ public:
     set(initialOn);
   }
   static void set(bool on) {
-    IOPin<pin>::setOutput(on ^ (activeLevel == kLow));
+    IOPin<pin>::setOutput(on ^ (activeLevel == kActiveLow));
   }
   static void on() {
     set(true);
@@ -160,7 +163,7 @@ public:
     set(false);
   }
   static bool get() {
-    return IOPin<pin>::getOutput() ^ (activeLevel == kLow);
+    return IOPin<pin>::getOutput() ^ (activeLevel == kActiveLow);
   }
 };
 

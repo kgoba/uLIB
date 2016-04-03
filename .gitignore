@@ -31,3 +31,6 @@
 # Intermediate files
 *.lst
 *.hex
+
+.DS_Store
+

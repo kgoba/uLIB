@@ -1,6 +1,6 @@
-#include <pins>
+#include <pins.hh>
 
-InputPin<20, kLow, kPullup> pin1;
+InputPin<20, kActiveLow, kPullup> pin1;
 
 int main()
 {

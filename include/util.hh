@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types"
+#include "types.hh"
 
 #define ARRAY_SIZE(array)     (sizeof(array) / sizeof(array[0]))
 
