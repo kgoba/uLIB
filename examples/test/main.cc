@@ -1,9 +1,15 @@
 #include <serial.hh>
 #include <stream.hh>
+#include <timer.hh>
+#include <pins.hh>
 
 const long baudrate  = 9600;
 const word timeoutRX = 500;     // in multiples of 10 us
 const word timeoutTX = 500;     // in multiples of 10 us
+
+IOPort<PortB>::pin0 led1;
+
+PWMDual<Timer0> pwm0;
 
 typedef WaitableSerial<BufferedSerial<SimpleSerial<baudrate> >, timeoutRX, timeoutTX> Serial;
 
@@ -13,6 +19,12 @@ int main()
 {
   serial.setup();
   serial.enable();
+
+  pwm0.setup();
+
+  led1.on();
+  pwm0.setPWMA(23);
+  pwm0.setPWMB(24);
 
   byte b = 72;
   

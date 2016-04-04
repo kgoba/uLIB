@@ -143,30 +143,196 @@ void timer2Setup(word frequency) {
 }
 */
 
-/*
-
-class OutputPin {
+template<typename cnt_t>
+class TimerBase {
 public:
-  OutputPin(byte pin, PinState onState = HIGH) 
-    : _pin(pin), _onState(onState)
-  {
+	static void setClock();
 
-  }
-  
-  void setup() {
-    pinMode(_pin, OUTPUT);
-  }
-
-  void on() {
-    pinWrite(_pin, _onState);
-  }
-  
-  void off() {
-    pinWrite(_pin, (PinState)(!_onState));
-  }
-
-private:
-  byte  _pin;
-  PinState  _onState;
+	static void setCounter(cnt_t value);
+	static cnt_t getCounter();
 };
-*/
+
+class Timer0 {
+public:
+	enum ClockSource {
+		eStop		= 0,
+		eDiv1 		= 1,
+		eDiv8		= 2,
+		eDiv64 		= 3,
+		eDiv256		= 4,
+		eDiv1024 	= 5,
+		eT0Fall 	= 6,
+		eT0Rise 	= 7
+	};
+
+	enum Mode {
+		eNormal 			= 0,
+		ePhaseCorrectPWM8	= 1,
+		eCTC				= 2,
+		eFastPWM8			= 3,
+		ePhaseCorrectPWM	= 5,
+		eFastPWM			= 7
+	};
+
+	static void setup(Mode mode, ClockSource source) {
+		TCCR1A = (mode & 0x03);
+		uint8_t mode_b = ((mode & 0x0C) << 1);
+		TCCR1B = source | mode_b;
+	}
+	static void setClock(ClockSource source);
+	static void setMode(Mode mode);
+
+	static void setCounter(byte value) { TCNT0 = value; }
+	static byte getCounter() { return TCNT0; }
+
+	static void setCompareA(byte value) { OCR0A = value; }
+	static void setCompareB(byte value) { OCR0B = value; }
+
+	static void setOverflowInterrupt(bool enabled);
+	static void setCompareAInterrupt(bool enabled);
+	static void setCompareBInterrupt(bool enabled);
+	static void setCaptureInterrupt(bool enabled);
+};
+
+template<class Base, long frequency, bool phaseCorrect = false>
+class PWMDual : Base {
+public:
+	static void setup() {
+		//Base::setMode(phaseCorrect ? Base::ePhaseCorrectPWM8 : Base::eFastPWM8);
+	}
+
+	static void enable() {
+		// setup pins for output
+	}
+
+	static void disable() {
+
+	}
+
+	static void setPWMA(byte value) {
+		Base::setCompareA(value);
+	}
+
+	static void setPWMB(byte value) {
+		Base::setCompareB(value);
+	}
+};
+
+#include "pins.hh"
+
+template<int pin>
+class PWMPin: public OutputPin<pin> {
+public:
+	static void setup() {
+		OutputPin<pin>::setup();
+	}
+
+	static void setToggleFrequency(uint32_t freq, uint8_t mode = TIMER0_CTC) {
+		TCCR0B = TIMER0_STOP;
+		if (freq == 0)
+			return;
+
+		OCR0A = TIMER0_COUNTS(freq * 2) - 1; //((31250 + freq / 2) / freq) - 1;
+
+		TIMER0_SETUP(mode, TIMER0_PRESCALER(freq * 2));
+	}
+
+	static void setFrequency(uint32_t freq, uint8_t mode = TIMER0_CTC) {
+		TCCR0B = TIMER0_STOP;
+		if (freq == 0)
+			return;
+
+		OCR0A = TIMER0_COUNTS(freq) - 1; //((31250 + freq / 2) / freq) - 1;
+
+		TIMER0_SETUP(mode, TIMER0_PRESCALER(freq));
+	}
+
+	static void setPWMPercent(uint32_t freq, uint8_t percent, uint8_t mode =
+			TIMER0_FAST_PWM) {
+		volatile uint8_t *reg;
+		switch (pin) {
+		case 5:
+			reg = &OCR0B;
+			break;
+		case 6:
+			reg = &OCR0A;
+			break;
+		default:
+			return;
+		}
+		*reg = (percent * 255 + 50) / 100;
+		TIMER0_SETUP(mode, TIMER0_PRESCALER(freq));
+	}
+
+	static void enableToggle() {
+		enable(1);
+	}
+
+	static void enable(uint8_t mode = 2) {
+		volatile uint8_t *reg;
+
+		switch (pin) {
+		case 5:
+			mode <<= 4;
+			break;
+		case 6:
+			mode <<= 6;
+			break;
+		default:
+			return;
+		}
+		switch (pin) {
+		case 5:
+		case 6:
+			reg = &TCCR0A;
+			break;
+		default:
+			return;
+		}
+		*reg = ((*reg) & 0x0F) | mode;
+	}
+
+	static void disable() {
+		enable(0);
+	}
+};
+
+template<bool phaseCorrect = false>
+class PWM0Dual {
+public:
+	static void setup(uint32_t frequency = 0) {
+		OutputPin<5>::setup();
+		OutputPin<6>::setup();
+		if (frequency)
+			setFrequency(frequency);
+	}
+
+	static void setFrequency(uint32_t frequency) {
+		uint8_t mode;
+		if (phaseCorrect)
+			mode = TIMER0_PWM_PHASE;
+		else
+			mode = TIMER0_FAST_PWM;
+
+		if (frequency > 0) {
+			TIMER0_SETUP(mode, TIMER0_PRESCALER(frequency));
+		} else {
+			TIMER0_SETUP(mode, TIMER0_STOP);
+		}
+	}
+
+	static void setToggle(bool channelA, bool channelB) {
+		TCCR0A = (TCCR0A & 0xF0) | (channelA ? (1 << COM0A0) : 0)
+				| (channelB ? (1 << COM0B0) : 0);
+	}
+
+	static void enable(bool inverted) {
+
+	}
+};
+
+template<uint32_t frequency>
+class Timer2Fixed {
+public:
+	void setup();
+};

@@ -1,2 +1,3 @@
 # PTLib
-Peripheral Template Library
+AVR Peripheral Template Library
+
