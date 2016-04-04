@@ -1,7 +1,8 @@
-#include <avr/io.h>
+#pragma once
 
 #include "util.hh"
-#include "types.hh"
+
+#include <avr/io.h>
 
 template<int pin>
 class IOPin {
@@ -166,6 +167,7 @@ public:
     return IOPin<pin>::getOutput() ^ (activeLevel == kActiveLow);
   }
 };
+
 
 template<int pin>
 class PWMPin : public OutputPin<pin> {
