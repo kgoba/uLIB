@@ -16,11 +16,17 @@ class IOPort;
 template<GPIOPort port, byte pin>
 class IOPin2 {
 public:
-	static void on() {
+	static void set() {
 		IOPort<port>::set(1 << pin);
 	}
-	static void off() {
+	static void clear() {
 		IOPort<port>::clear(1 << pin);
+	}
+	static void enableOutput() {
+		IOPort<port>::enableOutput(1 << pin);
+	}
+	static void disableOutput() {
+		IOPort<port>::disableOutput(1 << pin);
 	}
 };
 
@@ -41,6 +47,20 @@ public:
 		case PortB: PORTB &= !mask; break;
 		case PortC: PORTC &= !mask; break;
 		case PortD: PORTD &= !mask; break;
+		}
+	}
+	static void enableOutput(byte mask) {
+		switch (port) {
+		case PortB: DDRB |= mask; break;
+		case PortC: DDRC |= mask; break;
+		case PortD: DDRD |= mask; break;
+		}
+	}
+	static void disableOutput(byte mask) {
+		switch (port) {
+		case PortB: DDRB &= !mask; break;
+		case PortC: DDRC &= !mask; break;
+		case PortD: DDRD &= !mask; break;
 		}
 	}
 };

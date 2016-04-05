@@ -22,7 +22,9 @@ int main()
 
   pwm0.setup();
 
-  led1.on();
+  led1.set();
+  led1.clear();
+
   pwm0.setPWMA(23);
   pwm0.setPWMB(24);
 
