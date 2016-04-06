@@ -16,12 +16,21 @@ class IOPort;
 template<GPIOPort port, byte pin>
 class IOPin2 {
 public:
-	static void on() {
+	static void set() {
 		IOPort<port>::set(1 << pin);
 	}
-	static void off() {
+	static void clear() {
 		IOPort<port>::clear(1 << pin);
 	}
+  static byte read() {
+    return IOPort<port>::read(1 << pin);
+  }
+  static void enableOutput() {
+    IOPort<port>::enableOutput(1 << pin);
+  }
+  static void disableOutput() {
+    IOPort<port>::disableOutput(1 << pin);
+  }
 };
 
 template<GPIOPort port>
@@ -29,18 +38,39 @@ class IOPort {
 public:
 	typedef IOPin2<port, 0>	pin0;
 
-	static void set(byte mask) {
+	static void set(byte mask = 0xFF) {
 		switch (port) {
 		case PortB: PORTB |= mask; break;
 		case PortC: PORTC |= mask; break;
 		case PortD: PORTD |= mask; break;
 		}
 	}
-	static void clear(byte mask) {
+	static void clear(byte mask = 0xFF) {
 		switch (port) {
 		case PortB: PORTB &= !mask; break;
 		case PortC: PORTC &= !mask; break;
 		case PortD: PORTD &= !mask; break;
+		}
+	}
+	static void read(byte mask = 0xFF) {
+		switch (port) {
+		case PortB: return PINB & mask; break;
+		case PortC: return PINC & mask; break;
+		case PortD: return PIND & mask; break;
+		}
+	}
+	static void enableOutput(byte mask = 0xFF) {
+		switch (port) {
+		case PortB: DDRB |= mask; break;
+		case PortC: DDRC |= mask; break;
+		case PortD: DDRD |= mask; break;
+		}
+	}
+	static void disableOutput(byte mask = 0xFF) {
+		switch (port) {
+		case PortB: DDRB |= mask; break;
+		case PortC: DDRC |= mask; break;
+		case PortD: DDRD |= mask; break;
 		}
 	}
 };
