@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util.hh"
+#include "pins.hh"
 
 #include <avr/io.h>
 
@@ -174,13 +175,32 @@ public:
 		eFastPWM			= 7
 	};
 
-	static void setup(Mode mode, ClockSource source) {
-		TCCR1A = (mode & 0x03);
-		uint8_t mode_b = ((mode & 0x0C) << 1);
-		TCCR1B = source | mode_b;
+	enum OutputMode {
+		eNone				= 0,
+		eToggle				= 1,
+		eClear				= 2,
+		eSet				= 3
+	};
+
+	static IOPin2<PortB, 5>		pinA;
+	static IOPin2<PortB, 6>		pinB;
+
+	static void setup(Mode mode = eNormal, ClockSource source = eStop,
+					  OutputMode channelA = eNone, OutputMode channelB = eNone)
+	{
+		TCCR0A = (mode & 0x03);
+		uint8_t mode_b = ((mode & 0x04) << 1);
+		TCCR0B = source | mode_b;
 	}
-	static void setClock(ClockSource source);
-	static void setMode(Mode mode);
+	//static void setClock(ClockSource source);
+	//static void setMode(Mode mode);
+
+	static void setChannelA(byte mode) {
+		TCCR0A = (TCCR0A & 0x3F) | (mode << 6);
+	}
+	static void setChannelB(byte mode) {
+		TCCR0A = (TCCR0A & 0xCF) | (mode << 4);
+	}
 
 	static void setCounter(byte value) { TCNT0 = value; }
 	static byte getCounter() { return TCNT0; }
@@ -192,9 +212,51 @@ public:
 	static void setCompareAInterrupt(bool enabled);
 	static void setCompareBInterrupt(bool enabled);
 	static void setCaptureInterrupt(bool enabled);
+
+	static ClockSource findClock(long freq) {
+		ClockSource source;
+		source = (F_CPU/(freq) < 256 ? eDiv1 :
+				 (F_CPU/(8*freq) < 256 ? eDiv8 :
+				 (F_CPU/(64*freq) < 256 ? eDiv64 :
+                 (F_CPU/(256*freq) < 256 ? eDiv256 :
+                 (F_CPU/(1024*freq) < 256 ? eDiv1024 : eStop )))));
+		return source;
+	}
+
+	static word getPrescalerFactor(ClockSource source) {
+		switch (source) {
+		case eDiv1   : return 1; break;
+		case eDiv8   : return 8; break;
+		case eDiv64  : return 64; break;
+		case eDiv256 : return 256; break;
+		case eDiv1024: return 1024; break;
+		default		 : return 0; break;
+		}
+	}
 };
 
-template<class Base, long frequency, bool phaseCorrect = false>
+template<class Base, long frequency>
+class PWMSingle : Base {
+	static void setup() {
+		typename Base::ClockSource source = Base::findClock(frequency);
+		Base::setup(Base::eFastPWM, source);
+		word div = Base::getPrescaleFactor(source);
+		if (div > 0 && div < frequency) {
+			byte top = (byte)(frequency / div - 1);
+			Base::setCompareA(top);
+		}
+	}
+
+	static void enable() {
+		Base::pinB.enableOutput();
+	}
+
+	static void disable() {
+		Base::pinB.disableOutput();
+	}
+};
+
+template<class Base, bool phaseCorrect = false>
 class PWMDual : Base {
 public:
 	static void setup() {
@@ -329,10 +391,4 @@ public:
 	static void enable(bool inverted) {
 
 	}
-};
-
-template<uint32_t frequency>
-class Timer2Fixed {
-public:
-	void setup();
 };

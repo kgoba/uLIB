@@ -68,9 +68,9 @@ public:
 	}
 	static void disableOutput(byte mask = 0xFF) {
 		switch (port) {
-		case PortB: DDRB |= mask; break;
-		case PortC: DDRC |= mask; break;
-		case PortD: DDRD |= mask; break;
+		case PortB: DDRB &= !mask; break;
+		case PortC: DDRC &= !mask; break;
+		case PortD: DDRD &= !mask; break;
 		}
 	}
 };
