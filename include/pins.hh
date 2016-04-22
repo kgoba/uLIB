@@ -3,78 +3,77 @@
 #include "util.hh"
 
 #include <avr/io.h>
+#include <avr/sleep.h>
 
-enum GPIOPort {
-	PortB,
-	PortC,
-	PortD
+class SysClk {
+public:
+	static void disablePrescaler() {
+		CLKPR = (1 << CLKPCE);
+		CLKPR = 0;
+	}
+	static void sleep() {
+
+	}
 };
 
-template<GPIOPort port>
-class IOPort;
-
-template<GPIOPort port, byte pin>
+template<class port, byte pin>
 class IOPin2 {
 public:
 	static void set() {
-		IOPort<port>::set(1 << pin);
+		port::set(1 << pin);
 	}
 	static void clear() {
-		IOPort<port>::clear(1 << pin);
+		port::clear(1 << pin);
 	}
-  static byte read() {
-    return IOPort<port>::read(1 << pin);
-  }
-  static void enableOutput() {
-    IOPort<port>::enableOutput(1 << pin);
-  }
-  static void disableOutput() {
-    IOPort<port>::disableOutput(1 << pin);
-  }
+	static void toggle() {
+		port::toggle(1 << pin);
+	}
+	static byte read() {
+		return port::read(1 << pin);
+	}
+	static void enableOutput() {
+		port::enableOutput(1 << pin);
+	}
+	static void disableOutput() {
+		port::disableOutput(1 << pin);
+	}
 };
 
-template<GPIOPort port>
-class IOPort {
+#ifdef PORTB
+class PortB {
 public:
-	typedef IOPin2<port, 0>	pin0;
+	typedef IOPin2<PortB, 0> pin0;
+	typedef IOPin2<PortB, 1> pin1;
+	typedef IOPin2<PortB, 2> pin2;
+	typedef IOPin2<PortB, 3> pin3;
+	typedef IOPin2<PortB, 4> pin4;
+	typedef IOPin2<PortB, 5> pin5;
+	typedef IOPin2<PortB, 6> pin6;
+	typedef IOPin2<PortB, 7> pin7;
 
 	static void set(byte mask = 0xFF) {
-		switch (port) {
-		case PortB: PORTB |= mask; break;
-		case PortC: PORTC |= mask; break;
-		case PortD: PORTD |= mask; break;
-		}
+		(PORTB) |= mask;
 	}
 	static void clear(byte mask = 0xFF) {
-		switch (port) {
-		case PortB: PORTB &= !mask; break;
-		case PortC: PORTC &= !mask; break;
-		case PortD: PORTD &= !mask; break;
-		}
+		(PORTB) &= ~mask;
 	}
-	static void read(byte mask = 0xFF) {
-		switch (port) {
-		case PortB: return PINB & mask; break;
-		case PortC: return PINC & mask; break;
-		case PortD: return PIND & mask; break;
-		}
+	static void toggle(byte mask = 0xFF) {
+		(PORTB) ^= mask;
+	}
+	static byte read(byte mask = 0xFF) {
+		return (PINB) & mask;
 	}
 	static void enableOutput(byte mask = 0xFF) {
-		switch (port) {
-		case PortB: DDRB |= mask; break;
-		case PortC: DDRC |= mask; break;
-		case PortD: DDRD |= mask; break;
-		}
+		(DDRB) |= mask;
 	}
 	static void disableOutput(byte mask = 0xFF) {
-		switch (port) {
-		case PortB: DDRB &= !mask; break;
-		case PortC: DDRC &= !mask; break;
-		case PortD: DDRD &= !mask; break;
-		}
+		(DDRB) &= ~mask;
 	}
 };
+#endif
 
+
+/*
 template<int pin>
 class IOPin {
 public:
@@ -159,6 +158,7 @@ protected:
 			return PCIE1;
 	}
 };
+*/
 
 /*
 
@@ -170,6 +170,7 @@ protected:
 
  */
 
+/*
 typedef enum {
 	kActiveLow = 0, kActiveHigh = 1
 } LogicLevel;
@@ -239,6 +240,8 @@ byte InputDebouncePin<pin, debounce, activeLevel, pullup>::_counter = 0;
 template<int pin, byte debounce, LogicLevel activeLevel, PullupMode pullup>
 bool InputDebouncePin<pin, debounce, activeLevel, pullup>::_on = false;
 
+*/
+
 /*
 
  Example:
@@ -249,6 +252,8 @@ bool InputDebouncePin<pin, debounce, activeLevel, pullup>::_on = false;
  pin.off();                  // switch off
 
  */
+
+/*
 
 template<int pin, LogicLevel activeLevel = kActiveHigh>
 class OutputPin: public IOPin<pin> {
@@ -273,3 +278,4 @@ public:
 	}
 };
 
+*/
