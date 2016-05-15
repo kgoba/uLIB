@@ -1,15 +1,11 @@
 #pragma once
 
 #include "util.hh"
+#include "queue.hh"
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-class WaitableBase {
-public:
-  static const word IMMEDIATE     = 0;
-  static const word WAIT_FOREVER  = 0xFFFF;
-};
 
 template<long baudrate, bool use2x = false>
 class SimpleSerial {
@@ -73,49 +69,14 @@ public:
   }
 };
 
-template<typename T, byte size>
-class Queue {
+
+class WaitableBase {
 public:
-  //Queue() : count(0), head(0) {} 
-  
-  void clear() {
-    _count = 0;
-    _head = 0;
-  }
-  
-  bool push(T item) {
-    if (_count < size) {
-      byte tail = _head + _count;
-      if (tail >= size) tail -= size;
-      _buffer[tail] = item;
-      _count++;      
-      return true;
-    }
-    return false;
-  }
-  
-  bool pop(T &item) {
-    if (_count > 0) {
-      item = _buffer[_head];
-      _head++;
-      if (_head == size) _head = 0;
-      _count--;
-      return true;
-    }
-    return false;
-  }
-  
-  byte count() {
-    return _count;
-  }
-  
-private:
-  T     _buffer[size];
-  byte  _count;
-  byte  _head;
+  static const word IMMEDIATE     = 0;
+  static const word WAIT_FOREVER  = 0xFFFF;
 };
 
-template<class Serial, word rxTimeout = WaitableBase::IMMEDIATE, word txTimeout = WaitableBase::IMMEDIATE>
+template<class Serial, word rxTimeout = WaitableBase::WAIT_FOREVER, word txTimeout = WaitableBase::WAIT_FOREVER>
 class WaitableSerial : public Serial, public WaitableBase
 {
 public:
@@ -226,3 +187,83 @@ bool BufferedSerial<Serial, rxBufferSize, txBufferSize>::rxOverrun;
 template<class Serial, int rxBufferSize, int txBufferSize>
 bool BufferedSerial<Serial, rxBufferSize, txBufferSize>::txOverrun;
 
+
+
+
+template<long baudrate, class RXPin, class Timer, class Callback>
+class SoftSerial {
+public:
+  static void setup() {
+    RXPin::Port::enablePCInterrupt();    
+    Timer::setFrequency(baudrate);
+  }
+  
+  static void enable() {
+    RXPin::setPCMask();
+  }
+  
+  static void disable() {    
+    RXPin::clearPCMask();
+    Timer::stop();
+  }
+  
+  static void onPinChange() {
+    if (RXPin::read()) {
+      // Logical high
+    }
+    else {
+      // Logical low
+      if (bitIndex == 0) {
+        // Falling edge (start bit) received
+        rxData = 0;
+        rxError = 0;
+        bitIndex++;
+        Timer::start();
+      }
+    }
+  }
+  
+  static void onTimer() {
+    byte state = RXPin::read();
+    if (bitIndex == 0) {
+      // Start bit (low) expected
+      if (state) {
+        rxError = 1;
+        bitIndex = 0;
+        Timer::stop();
+      }
+    }
+    else if (bitIndex == 10) {
+      // Expecting the stop bit (high)
+      if (!state) {
+        rxError = 1;
+      }
+      bitIndex = 0;
+      Timer::stop();
+      Callback::onReceive(rxData, rxError);
+    }
+    else {
+      // Start bit or data bits
+      // Shift bit in 
+      rxData <<= 1;
+      if (state) {
+        // Logical high
+        rxData |= 1;
+      }
+      bitIndex++;
+    }
+  }
+  
+  static byte rxData;
+  static byte rxError;
+  static byte bitIndex;
+};
+
+template<long baudrate, class RXPin, class Timer, class Callback>
+byte SoftSerial<baudrate, RXPin, Timer, Callback>::rxData;
+
+template<long baudrate, class RXPin, class Timer, class Callback>
+byte SoftSerial<baudrate, RXPin, Timer, Callback>::rxError;
+
+template<long baudrate, class RXPin, class Timer, class Callback>
+byte SoftSerial<baudrate, RXPin, Timer, Callback>::bitIndex;

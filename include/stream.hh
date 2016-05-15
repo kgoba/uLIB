@@ -2,6 +2,18 @@
 
 #include "util.hh"
 
+class ByteFormat {
+public:
+  IntFormat(byte b) {
+    str[0] = b;
+  }
+  
+  const char * getString() { return str; }
+  
+private:
+  char str[3];
+};
+
 template<class Base>
 class TextStream : public Base 
 {

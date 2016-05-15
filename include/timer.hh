@@ -153,12 +153,14 @@ public:
 	static cnt_t getCounter();
 };
 
-class Timer0 {
+
+
+class Generic8BitTimer {
 public:
 	enum ClockSource {
-		eStop		= 0,
+		eStop		  = 0,
 		eDiv1 		= 1,
-		eDiv8		= 2,
+		eDiv8		  = 2,
 		eDiv64 		= 3,
 		eDiv256		= 4,
 		eDiv1024 	= 5,
@@ -167,23 +169,47 @@ public:
 	};
 
 	enum Mode {
-		eNormal 			= 0,
+		eNormal 			    = 0,
 		ePhaseCorrectPWM8	= 1,
-		eCTC				= 2,
-		eFastPWM8			= 3,
+		eCTC				      = 2,
+		eFastPWM8			    = 3,
 		ePhaseCorrectPWM	= 5,
-		eFastPWM			= 7
+		eFastPWM			    = 7
 	};
 
 	enum OutputMode {
-		eNone				= 0,
+		eNone				  = 0,
 		eToggle				= 1,
 		eClear				= 2,
-		eSet				= 3
+		eSet				  = 3
 	};
 
-	static IOPin2<PortB, 5>		pinA;
-	static IOPin2<PortB, 6>		pinB;
+	static ClockSource findClock(long freq) {
+		ClockSource source;
+		source = (F_CPU/(freq) < 256 ? eDiv1 :
+				 (F_CPU/(8*freq) < 256 ? eDiv8 :
+				 (F_CPU/(64*freq) < 256 ? eDiv64 :
+                 (F_CPU/(256*freq) < 256 ? eDiv256 :
+                 (F_CPU/(1024*freq) < 256 ? eDiv1024 : eStop )))));
+		return source;
+	}
+
+	static word getPrescalerFactor(ClockSource source) {
+		switch (source) {
+		case eDiv1   : return 1; break;
+		case eDiv8   : return 8; break;
+		case eDiv64  : return 64; break;
+		case eDiv256 : return 256; break;
+		case eDiv1024: return 1024; break;
+		default		 : return 0; break;
+		}
+	}
+};
+
+class Timer0 : public Generic8BitTimer {
+public:
+	//static IOPin<PortB, 5>		pinA;
+	//static IOPin<PortB, 6>		pinB;
 
 	static void setup(Mode mode = eNormal, ClockSource source = eStop,
 					  OutputMode channelA = eNone, OutputMode channelB = eNone)
@@ -208,32 +234,55 @@ public:
 	static void setCompareA(byte value) { OCR0A = value; }
 	static void setCompareB(byte value) { OCR0B = value; }
 
-	static void setOverflowInterrupt(bool enabled);
+	static void setOverflowInterrupt(bool enabled) {
+	  if (enabled) bit_set(TIMSK0, TOIE0);
+    else bit_clear(TIMSK0, TOIE0);
+  }
 	static void setCompareAInterrupt(bool enabled);
 	static void setCompareBInterrupt(bool enabled);
 	static void setCaptureInterrupt(bool enabled);
-
-	static ClockSource findClock(long freq) {
-		ClockSource source;
-		source = (F_CPU/(freq) < 256 ? eDiv1 :
-				 (F_CPU/(8*freq) < 256 ? eDiv8 :
-				 (F_CPU/(64*freq) < 256 ? eDiv64 :
-                 (F_CPU/(256*freq) < 256 ? eDiv256 :
-                 (F_CPU/(1024*freq) < 256 ? eDiv1024 : eStop )))));
-		return source;
-	}
-
-	static word getPrescalerFactor(ClockSource source) {
-		switch (source) {
-		case eDiv1   : return 1; break;
-		case eDiv8   : return 8; break;
-		case eDiv64  : return 64; break;
-		case eDiv256 : return 256; break;
-		case eDiv1024: return 1024; break;
-		default		 : return 0; break;
-		}
-	}
 };
+
+class Timer2 : public Generic8BitTimer {
+public:
+	//static IOPin<PortB, 5>		pinA;
+	//static IOPin<PortB, 6>		pinB;
+
+	static void setup(Mode mode = eNormal, ClockSource source = eStop,
+					  OutputMode channelA = eNone, OutputMode channelB = eNone)
+	{
+		TCCR2A = (mode & 0x03);
+		uint8_t mode_b = ((mode & 0x04) << 1);
+		TCCR2B = source | mode_b;
+	}
+	//static void setClock(ClockSource source);
+	//static void setMode(Mode mode);
+
+	static void setChannelA(byte mode) {
+		TCCR2A = (TCCR2A & 0x3F) | (mode << 6);
+	}
+	static void setChannelB(byte mode) {
+		TCCR2A = (TCCR2A & 0xCF) | (mode << 4);
+	}
+
+	static void setCounter(byte value) { TCNT2 = value; }
+	static byte getCounter() { return TCNT2; }
+
+	static void setCompareA(byte value) { OCR2A = value; }
+	static void setCompareB(byte value) { OCR2B = value; }
+
+	static void setOverflowInterrupt(bool enabled) {
+	  if (enabled) bit_set(TIMSK2, TOIE2);
+    else bit_clear(TIMSK2, TOIE2);
+	}
+	static void setCompareAInterrupt(bool enabled);
+	static void setCompareBInterrupt(bool enabled);
+	static void setCaptureInterrupt(bool enabled);
+};
+
+
+
+
 
 template<class Base, long frequency>
 class PWMSingle : Base {
@@ -280,6 +329,7 @@ public:
 	}
 };
 
+/*
 #include "pins.hh"
 
 template<int pin>
@@ -392,3 +442,4 @@ public:
 
 	}
 };
+*/
