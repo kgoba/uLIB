@@ -1,5 +1,6 @@
-//#include <timer.hh>
+#include <timer.hh>
 #include <pins.hh>
+#include <adc.hh>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -8,25 +9,6 @@
 // 0 for normal operation, 1 for debug (blink)
 #define DEBUG             1
 
-class Timer1 {
-public:
-	void setup() {
-		// Setup Timer1
-		TCCR1 = (1 << PWM1A);   // OCR1C = TOP
-		TCCR1 |= (1 << CS12) | (1 << CS10); // prescaler /16
-		OCR1C = 255;    // set TOP
-	}
-
-	enum InterruptType {
-		eOverflowInterrupt
-	};
-
-	void enableInterrupt(InterruptType type) {
-		switch (type) {
-		case eOverflowInterrupt: bit_set(TIMSK, TOIE1); break;
-		}
-	}
-};
 
 // Hardware definitions
 PortB::pin0 led1;
