@@ -16,9 +16,11 @@ public:
 	}
 };
 
-template<class port, byte pin>
-class IOPin2 {
+template<typename port, byte pin>
+class IOPin {
 public:
+  typedef port Port;
+    
 	static void set() {
 		port::set(1 << pin);
 	}
@@ -37,19 +39,22 @@ public:
 	static void disableOutput() {
 		port::disableOutput(1 << pin);
 	}
+  static void setPCMask() {
+    port::setPCMask(1 << pin);
+  }
 };
 
 #ifdef PORTB
 class PortB {
 public:
-	typedef IOPin2<PortB, 0> pin0;
-	typedef IOPin2<PortB, 1> pin1;
-	typedef IOPin2<PortB, 2> pin2;
-	typedef IOPin2<PortB, 3> pin3;
-	typedef IOPin2<PortB, 4> pin4;
-	typedef IOPin2<PortB, 5> pin5;
-	typedef IOPin2<PortB, 6> pin6;
-	typedef IOPin2<PortB, 7> pin7;
+	typedef IOPin<PortB, 0> pin0;
+	typedef IOPin<PortB, 1> pin1;
+	typedef IOPin<PortB, 2> pin2;
+	typedef IOPin<PortB, 3> pin3;
+	typedef IOPin<PortB, 4> pin4;
+	typedef IOPin<PortB, 5> pin5;
+	typedef IOPin<PortB, 6> pin6;
+	typedef IOPin<PortB, 7> pin7;
 
 	static void set(byte mask = 0xFF) {
 		(PORTB) |= mask;
@@ -69,9 +74,50 @@ public:
 	static void disableOutput(byte mask = 0xFF) {
 		(DDRB) &= ~mask;
 	}
+	static void enablePCInterrupt(byte mask = 0xFF) {
+		bit_set(PCICR, PCIE0);
+	}
+	static void disablePCInterrupt(byte mask = 0xFF) {
+		bit_clear(PCICR, PCIE0);
+	}
+	static void setPCMask(byte mask = 0xFF) {
+		(PCMSK0) |= mask;
+	}
+	static void clearPCMask(byte mask = 0xFF) {
+		(PCMSK0) &= ~mask;
+	}
 };
 #endif
 
+#ifdef PORTC
+class PortC {
+public:
+	typedef IOPin<PortC, 6> pin6;
+	typedef IOPin<PortC, 7> pin7;
+
+	static void set(byte mask = 0xFF) {
+		(PORTC) |= mask;
+	}
+	static void clear(byte mask = 0xFF) {
+		(PORTC) &= ~mask;
+	}
+	static void toggle(byte mask = 0xFF) {
+		(PORTC) ^= mask;
+	}
+	static byte read(byte mask = 0xFF) {
+		return (PINC) & mask;
+	}
+	static void enableOutput(byte mask = 0xFF) {
+		(DDRC) |= mask;
+	}
+	static void disableOutput(byte mask = 0xFF) {
+		(DDRC) &= ~mask;
+	}
+};
+#endif
+
+typedef PortB::pin4 ArduPin8;
+typedef PortC::pin7 ArduPin13;
 
 /*
 template<int pin>
