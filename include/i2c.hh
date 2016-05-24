@@ -40,7 +40,6 @@ public:
   static void setup(uint32_t clockFrequency = 100000ul) {
   	_state = kReady;
   	_errorCode = 0xFF;
-  	_repStart = 0;
   	// Set prescaler (no prescaling) (TODO: set correct prescaler)
     // Note that no prescaler is necessary for 100kHz clock
   	TWSR = 0;
@@ -51,7 +50,7 @@ public:
   }
   
   static byte write(byte address, byte *const data, byte nBytes, TransferMode mode = kSendStop) {
-    if (!isTWIReady()) return 0;
+    if (!isReady()) return 0;
     _sla = (address << 1) | TW_WRITE;
     _mode = mode;
     _data = data;
@@ -88,7 +87,7 @@ private:
   static byte    _sla;
   static State   _state;
   static byte    _errorCode;
-  static TransmitMode    _mode;
+  static TransferMode    _mode;
   
   static byte   * _data;
   static byte   _dataLength; // The total number of bytes to transmit
@@ -193,7 +192,7 @@ private:
   		case TW_MR_DATA_NACK: // Data byte has been received, NACK has been transmitted. End of transmission.
 		
   			/// -- HANDLE DATA BYTE --- ///
-  			*_data+++ = TWDR;	
+  			*_data++ = TWDR;	
         _dataLength--;
   			// All transmissions are complete, exit
 				_state = kReady;
