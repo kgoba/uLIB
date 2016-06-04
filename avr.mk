@@ -35,8 +35,8 @@ $(TARGET).elf: $(OBJ) $(LIBS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 fuse:
-	avrdude -p $(MCU) -c $(PROGRAMMER) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(XFUSE):m
+	avrdude -p $(MCU) -c $(PROGRAMMER) $(PROG_OPTS) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(XFUSE):m
 
 program: $(TARGET).hex
-	avrdude -p $(MCU) -c $(PROGRAMMER) -U flash:w:$(TARGET).hex
+	avrdude -p $(MCU) -c $(PROGRAMMER) $(PROG_OPTS) -U flash:w:$(TARGET).hex
 
