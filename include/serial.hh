@@ -142,6 +142,9 @@ public:
     if (txQueue.pop(top)) {
       Serial::writeByte(top, true);
     }
+    if (txQueue.count() == 0) {
+		Serial::setTXReadyInterrupt(false);
+	}
   }
   
   static byte availableRX() {
@@ -150,7 +153,7 @@ public:
   
   static bool readByte(byte &b) {
     ENTER_CRITICAL;
-    bool success = txQueue.pop(b);
+    bool success = rxQueue.pop(b);
     EXIT_CRITICAL;
     return success;
   }

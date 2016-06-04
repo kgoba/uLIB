@@ -4,7 +4,7 @@
 
 class ByteFormat {
 public:
-  IntFormat(byte b) {
+  ByteFormat(byte b) {
     str[0] = b;
   }
   
@@ -75,11 +75,22 @@ public:
         byte d2 = b / 1000;
         printDigit(d2);
         b -= d2 * 1000;
+        byte d3 = b / 100;
+        printDigit(d3);
+        b -= d3 * 100;
         print(b, base);
         break;
       }
     }
     return *this;
+  }
+  
+  TextStream & print(int16_t b, IntBase base = eDecimal) {
+	  if (b < 0) {
+		  Base::writeByte('-');
+		  b = -b;
+	  }
+	  print((word)b, base);
   }
   
   TextStream & eol() {

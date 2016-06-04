@@ -238,3 +238,12 @@ private:
   	}        
   }
 };
+
+
+byte    TWIMaster::_sla;
+TWIMaster::State   TWIMaster::_state;
+byte    TWIMaster::_errorCode;
+TWIMaster::TransferMode    TWIMaster::_mode;
+  
+byte   * TWIMaster::_data;
+byte   TWIMaster::_dataLength;
