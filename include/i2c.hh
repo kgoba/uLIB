@@ -27,19 +27,31 @@ public:
 template<class I2CPeriph, byte address>
 class I2CDevice {
 public:
-  static void send(byte *const data, byte nBytes, I2C::TransferMode mode = I2C::kSendStop) {
+  static bool send(byte *const data, byte nBytes, I2C::TransferMode mode = I2C::kSendStop) {
     I2CPeriph::write(address, data, nBytes, mode);
+    for (byte nTry = 0; nTry < 10; nTry++) {
+      _delay_ms(5);
+      if (I2CPeriph::isReady()) {
+        return !I2CPeriph::isError();
+      }
+    }
+    return false;
   }
-  static void receive(byte * data, byte nBytes, I2C::TransferMode mode = I2C::kSendStop) {
+  static bool receive(byte * data, byte nBytes, I2C::TransferMode mode = I2C::kSendStop) {
     I2CPeriph::read(address, data, nBytes, mode);
+    for (byte nTry = 0; nTry < 10; nTry++) {
+      _delay_ms(5);
+      if (I2CPeriph::isReady()) {
+        return !I2CPeriph::isError();
+      }
+    }
+    return false;
   }
 };
 
 class TWIMaster : public I2C {
 public:  
   static void setup(uint32_t clockFrequency = 100000ul) {
-  	_state = kReady;
-  	_errorCode = 0xFF;
   	// Set prescaler (no prescaling) (TODO: set correct prescaler)
     // Note that no prescaler is necessary for 100kHz clock
   	TWSR = 0;
@@ -47,39 +59,56 @@ public:
   	TWBR = ((F_CPU / clockFrequency) - 16) / 2;
   	// Enable TWI and interrupt
   	TWCR = (1 << TWIE) | (1 << TWEN);
+  	_state = kReady;
+  	_errorCode = 0xFF;
   }
   
-  static byte write(byte address, byte *const data, byte nBytes, TransferMode mode = kSendStop) {
-    if (!isReady()) return 0;
+  static bool write(byte address, byte *const data, byte nBytes, TransferMode mode = kSendStop) {
+    if (!isReady()) return false;
     _sla = (address << 1) | TW_WRITE;
     _mode = mode;
     _data = data;
     _dataLength = nBytes;
+    _state = kConnect;
+    _errorCode = 0xFF;
     TWISendStart();
+    return true;
   }
   
-  static byte read(byte address, byte *data, byte nBytes, TransferMode mode = kSendStop) {
+  static bool read(byte address, byte *data, byte nBytes, TransferMode mode = kSendStop) {
+    if (!isReady()) return false;
     _sla = (address << 1) | TW_READ;
     _mode = mode;
     _data = data;
     _dataLength = nBytes;
+    _state = kConnect;
+    _errorCode = 0xFF;
     TWISendStart();
+    return true;
   }
   
   static bool isReady(void) {
-  	return (_state == kReady) || (_state == kRepeatedStartSent);
+  	return (_state == kReady);
+  }
+  
+  static bool isError(void) {
+  	return (_errorCode != 0xFF);
   }
   
   static bool onTWIInterrupt() {
     interruptImpl();
   }
   
+  // Send the STOP signal, enable interrupts and TWI, clear TWINT flag.
+  static void TWISendStop() { 
+    TWCR = (1<<TWINT)|(1<<TWSTO)|(1<<TWEN)|(1<<TWIE);
+  } 
+  
 private:
   
   enum State {
   	kReady,
-  	kInitializing,
-  	kRepeatedStartSent,
+    kConnect,
   	kTransmit,
   	kReceive
   };
@@ -89,8 +118,8 @@ private:
   static byte    _errorCode;
   static TransferMode    _mode;
   
-  static byte   * _data;
-  static byte   _dataLength; // The total number of bytes to transmit
+  static volatile byte   * _data;
+  static volatile byte   _dataLength; // The total number of bytes to transmit
   
   
   /************************ Helper methods ************************/
@@ -100,10 +129,6 @@ private:
     TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN)|(1<<TWIE);
   }
   
-  // Send the STOP signal, enable interrupts and TWI, clear TWINT flag.
-  static void TWISendStop() { 
-    TWCR = (1<<TWINT)|(1<<TWSTO)|(1<<TWEN)|(1<<TWIE);
-  } 
 
   // Used to resume a transfer, clear TWINT and ensure that TWI and interrupts are enabled.
   static void TWISendTransmit()	{
@@ -135,6 +160,7 @@ private:
         break;
   		// ----\/ ---- MASTER TRANSMITTER ----\/ ----  //
   		case TW_MT_SLA_ACK: // SLA+W transmitted and ACK received
+        _state = kTransmit;
   		case TW_MT_DATA_ACK: // Data byte has been transmitted, ACK received
   			if (_dataLength > 0) // If there is more data to send
   			{
@@ -174,8 +200,11 @@ private:
 		
   		case TW_MR_DATA_ACK: // Data has been received, ACK has been transmitted.
   			/// -- HANDLE DATA BYTE --- ///
-  			*_data++ = TWDR;
-        _dataLength--;
+        if (_dataLength > 0) {
+  			  *_data++ = TWDR;
+          _dataLength--;
+        }
+        
 				_errorCode = TW_NO_INFO;
   			// If there is more than one byte to be read, receive data byte and return an ACK
   			if (_dataLength > 1)
@@ -192,8 +221,10 @@ private:
   		case TW_MR_DATA_NACK: // Data byte has been received, NACK has been transmitted. End of transmission.
 		
   			/// -- HANDLE DATA BYTE --- ///
-  			*_data++ = TWDR;	
-        _dataLength--;
+        if (_dataLength > 0) {
+  			  *_data++ = TWDR;	
+          _dataLength--;
+        }
   			// All transmissions are complete, exit
 				_state = kReady;
 				_errorCode = 0xFF;
@@ -208,13 +239,15 @@ private:
   		case TW_MT_SLA_NACK: // SLA+W transmitted, NACK received
   		case TW_MT_DATA_NACK: // Data byte has been transmitted, NACK received
   		case TW_MT_ARB_LOST: // Arbitration has been lost
-      _state = kReady;
+        _state = kReady;
   			_errorCode = TW_STATUS;
   			TWISendStop();
   			break;
   		case TW_REP_START: // Repeated start has been transmitted
   			// Set the mode but DO NOT clear TWINT as the next data is not yet ready
-  			_state = kRepeatedStartSent;
+  			//_state = kRepeatedStartSent;
+        TWDR = _sla;    // Transmit either SLA+W or SLA+R
+        TWISendTransmit();
   			break;
 		
   		// ----\/ ---- SLAVE RECEIVER ----\/ ----  //
@@ -245,5 +278,5 @@ TWIMaster::State   TWIMaster::_state;
 byte    TWIMaster::_errorCode;
 TWIMaster::TransferMode    TWIMaster::_mode;
   
-byte   * TWIMaster::_data;
-byte   TWIMaster::_dataLength;
+volatile byte   * TWIMaster::_data;
+volatile byte   TWIMaster::_dataLength;

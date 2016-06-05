@@ -64,8 +64,8 @@ public:
     switch (base) {
       case eHex:
       case eBinary: {
-        print(b >> 8, base);
-        print(b & 0xFF, base);
+        print((byte)(b >> 8), base);
+        print((byte)(b & 0xFF), base);
         break;
       }
       case eDecimal: {
@@ -78,7 +78,10 @@ public:
         byte d3 = b / 100;
         printDigit(d3);
         b -= d3 * 100;
-        print(b, base);
+        byte d4 = b / 10;
+        printDigit(d4);
+        b -= d4 * 10;
+        printDigit(b);        
         break;
       }
     }
@@ -96,6 +99,11 @@ public:
   TextStream & eol() {
     Base::writeByte('\r');
     Base::writeByte('\n');
+    return *this;
+  }
+  
+  TextStream & tab() {
+    Base::writeByte('\t');
     return *this;
   }
   

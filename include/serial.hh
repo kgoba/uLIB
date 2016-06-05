@@ -141,10 +141,9 @@ public:
     byte top;
     if (txQueue.pop(top)) {
       Serial::writeByte(top, true);
-    }
-    if (txQueue.count() == 0) {
-		Serial::setTXReadyInterrupt(false);
-	}
+    } else {
+		  Serial::setTXReadyInterrupt(false);
+	  }
   }
   
   static byte availableRX() {
