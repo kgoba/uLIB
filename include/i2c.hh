@@ -47,6 +47,31 @@ public:
     }
     return false;
   }
+  
+  static bool readWord(byte cmd, word &result) {
+    if (!send(&cmd, 1, I2CPeriph::kNoStop)) {
+      return false;
+    }
+    byte data[2];
+    if (!receive(data, ARRAY_SIZE(data))) {
+      return false;
+    }
+    result = ((word)data[0] << 8) | data[1];
+    return true;
+  }
+
+  static bool readByte(byte cmd, byte &result) {
+    if (!send(&cmd, 1, I2CPeriph::kNoStop)) {
+      return false;
+    }
+    byte data[2];
+    if (!receive(data, ARRAY_SIZE(data))) {
+      return false;
+    }
+    result = ((word)data[0] << 8) | data[1];
+    return true;
+  }
+  
 };
 
 class TWIMaster : public I2C {
