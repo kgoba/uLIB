@@ -10,7 +10,7 @@
 template<long baudrate, bool use2x = false>
 class SimpleSerial {
 public:
-  
+    /// Initialize serial port hardware.
   static void setup() {
     UBRR0 = (F_CPU + 8UL * baudrate) / (16UL * baudrate) - 1;
 
@@ -21,10 +21,12 @@ public:
     UCSR0C = bit_mask2(UCSZ01, UCSZ00); /* 8-bit data */
   }
   
+    /// Enable serial port.
   static void enable() {
     UCSR0B = bit_mask2(RXEN0, TXEN0);
   }
   
+    /// Disable serial port.
   static void disable() {
     UCSR0B = 0;
   }
@@ -190,10 +192,11 @@ template<class Serial, int rxBufferSize, int txBufferSize>
 bool BufferedSerial<Serial, rxBufferSize, txBufferSize>::txOverrun;
 
 
+typedef void (*SerialReceiveCallback) (byte b);
 
 
 template<long baudrate, class RXPin, class Timer, class Callback>
-class SoftSerial {
+class SoftSerialReceiver {
 public:
   static void setup() {
     RXPin::Port::enablePCInterrupt();    
@@ -202,6 +205,8 @@ public:
   
   static void enable() {
     RXPin::setPCMask();
+    bitIndex = 0;
+    rxComplete = false;
   }
   
   static void disable() {    
@@ -220,7 +225,8 @@ public:
         rxData = 0;
         rxError = 0;
         bitIndex++;
-        Timer::start();
+        Timer::startHalfTimeout();
+        RXPin::clearPCMask();
       }
     }
   }
@@ -232,7 +238,9 @@ public:
       if (state) {
         rxError = 1;
         bitIndex = 0;
-        Timer::stop();
+      }
+      else {
+          Timer::startFullTimeout();
       }
     }
     else if (bitIndex == 10) {
@@ -240,9 +248,14 @@ public:
       if (!state) {
         rxError = 1;
       }
-      bitIndex = 0;
-      Timer::stop();
+      rxComplete = true;
       Callback::onReceive(rxData, rxError);
+      bitIndex++;
+      Timer::startFullTimeout();
+    }
+    else if (bitIndex == 11) {
+        bitIndex = 0;
+        RXPin::setPCMask();
     }
     else {
       // Start bit or data bits
@@ -253,19 +266,34 @@ public:
         rxData |= 1;
       }
       bitIndex++;
+      Timer::startFullTimeout();
     }
   }
   
+  static bool readByte(byte &b, bool noCheck = false) {
+    if (!noCheck && !isRXComplete()) return false;
+    b = rxData;
+    return true;
+  }
+
+  static bool isRXComplete() {
+    return rxComplete;
+  }
+  
   static byte rxData;
+  static bool rxComplete;
   static byte rxError;
   static byte bitIndex;
 };
 
 template<long baudrate, class RXPin, class Timer, class Callback>
-byte SoftSerial<baudrate, RXPin, Timer, Callback>::rxData;
+byte SoftSerialReceiver<baudrate, RXPin, Timer, Callback>::rxData;
 
 template<long baudrate, class RXPin, class Timer, class Callback>
-byte SoftSerial<baudrate, RXPin, Timer, Callback>::rxError;
+byte SoftSerialReceiver<baudrate, RXPin, Timer, Callback>::rxError;
 
 template<long baudrate, class RXPin, class Timer, class Callback>
-byte SoftSerial<baudrate, RXPin, Timer, Callback>::bitIndex;
+byte SoftSerialReceiver<baudrate, RXPin, Timer, Callback>::bitIndex;
+
+template<long baudrate, class RXPin, class Timer, class Callback>
+bool SoftSerialReceiver<baudrate, RXPin, Timer, Callback>::rxComplete;

@@ -20,7 +20,7 @@ template<typename port, byte pin>
 class IOPin {
 public:
   typedef port Port;
-    
+
 	static void set() {
 		port::set(1 << pin);
 	}
@@ -42,6 +42,17 @@ public:
   static void setPCMask() {
     port::setPCMask(1 << pin);
   }
+
+  static void clearPCMask() {
+    port::clearPCMask(1 << pin);
+  }
+
+	static void enablePCInterrupt() {
+		port::enablePCInterrupt();
+	}
+	static void disablePCInterrupt() {
+		port::disablePCInterrupt();
+	}
 };
 
 #ifdef PORTB
@@ -74,10 +85,10 @@ public:
 	static void disableOutput(byte mask = 0xFF) {
 		(DDRB) &= ~mask;
 	}
-	static void enablePCInterrupt(byte mask = 0xFF) {
+	static void enablePCInterrupt() {
 		bit_set(PCICR, PCIE0);
 	}
-	static void disablePCInterrupt(byte mask = 0xFF) {
+	static void disablePCInterrupt() {
 		bit_clear(PCICR, PCIE0);
 	}
 	static void setPCMask(byte mask = 0xFF) {
@@ -116,8 +127,67 @@ public:
 };
 #endif
 
+#ifdef PORTD
+class PortD {
+public:
+	typedef IOPin<PortD, 0> pin0;
+	typedef IOPin<PortD, 1> pin1;
+	typedef IOPin<PortD, 2> pin2;
+	typedef IOPin<PortD, 3> pin3;
+	typedef IOPin<PortD, 4> pin4;
+	typedef IOPin<PortD, 5> pin5;
+	typedef IOPin<PortD, 6> pin6;
+	typedef IOPin<PortD, 7> pin7;
+
+	static void set(byte mask = 0xFF) {
+		(PORTD) |= mask;
+	}
+	static void clear(byte mask = 0xFF) {
+		(PORTD) &= ~mask;
+	}
+	static void toggle(byte mask = 0xFF) {
+		(PORTD) ^= mask;
+	}
+	static byte read(byte mask = 0xFF) {
+		return (PIND) & mask;
+	}
+	static void enableOutput(byte mask = 0xFF) {
+		(DDRD) |= mask;
+	}
+	static void disableOutput(byte mask = 0xFF) {
+		(DDRD) &= ~mask;
+	}
+};
+#endif
+
+
+// Pinout on Leonardo
+#ifdef LEONARDO
 typedef PortB::pin4 ArduPin8;
+typedef PortB::pin5 ArduPin9;
+typedef PortB::pin6 ArduPin10;
+typedef PortB::pin7 ArduPin11;
+
 typedef PortC::pin7 ArduPin13;
+
+#else
+
+typedef PortD::pin0 ArduPin0;
+typedef PortD::pin1 ArduPin1;
+typedef PortD::pin2 ArduPin2;
+typedef PortD::pin3 ArduPin3;
+typedef PortD::pin4 ArduPin4;
+typedef PortD::pin5 ArduPin5;
+typedef PortD::pin6 ArduPin6;
+typedef PortD::pin7 ArduPin7;
+typedef PortB::pin0 ArduPin8;
+typedef PortB::pin1 ArduPin9;
+typedef PortB::pin2 ArduPin10;
+typedef PortB::pin3 ArduPin11;
+typedef PortB::pin4 ArduPin12;
+typedef PortB::pin5 ArduPin13;
+
+#endif
 
 /*
 template<int pin>
