@@ -78,7 +78,7 @@ public:
 
 class TWIMaster : public I2CBase {
 public:
-  static void setup(uint32_t clockFrequency = 100000ul) {
+  static void begin(uint32_t clockFrequency = 100000ul) {
   	// Set prescaler (no prescaling) (TODO: set correct prescaler)
     // Note that no prescaler is necessary for 100kHz clock
   	TWSR = 0;

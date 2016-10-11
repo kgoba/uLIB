@@ -55,6 +55,22 @@ public:
 	}
 };
 
+template<class Port, int pin>
+class DigitalOut : public IOPin<Port, pin> {
+public:
+  DigitalOut() {
+    IOPin<Port, pin>::enableOutput();
+  }
+};
+
+template<class Port, int pin>
+class DigitalIn : public IOPin<Port, pin> {
+public:
+  DigitalIn() {
+    //IOPin<Port, pin>::enableOutput();
+  }
+};
+
 #ifdef PORTB
 class PortB {
 public:
