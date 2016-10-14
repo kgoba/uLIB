@@ -140,6 +140,18 @@ public:
 	static void disableOutput(byte mask = 0xFF) {
 		(DDRC) &= ~mask;
 	}
+	static void enablePCInterrupt() {
+		bit_set(PCICR, PCIE1);
+	}
+	static void disablePCInterrupt() {
+		bit_clear(PCICR, PCIE1);
+	}
+	static void setPCMask(byte mask = 0xFF) {
+		(PCMSK1) |= mask;
+	}
+	static void clearPCMask(byte mask = 0xFF) {
+		(PCMSK1) &= ~mask;
+	}
 };
 #endif
 
@@ -172,6 +184,18 @@ public:
 	}
 	static void disableOutput(byte mask = 0xFF) {
 		(DDRD) &= ~mask;
+	}
+	static void enablePCInterrupt() {
+		bit_set(PCICR, PCIE2);
+	}
+	static void disablePCInterrupt() {
+		bit_clear(PCICR, PCIE2);
+	}
+	static void setPCMask(byte mask = 0xFF) {
+		(PCMSK2) |= mask;
+	}
+	static void clearPCMask(byte mask = 0xFF) {
+		(PCMSK2) &= ~mask;
 	}
 };
 #endif

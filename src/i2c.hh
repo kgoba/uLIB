@@ -152,26 +152,26 @@ private:
   /************************ Helper methods ************************/
 
   // Send the START signal, enable interrupts and TWI, clear TWINT flag to resume transfer.
-  static void TWISendStart() {
+  static inline void TWISendStart() {
     TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN)|(1<<TWIE);
   }
 
 
   // Used to resume a transfer, clear TWINT and ensure that TWI and interrupts are enabled.
-  static void TWISendTransmit()	{
+  static inline void TWISendTransmit()	{
     TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWIE);
   }
 
   // FOR MR mode. Resume a transfer, ensure that TWI and interrupts are enabled
   // and respond with an ACK if the device is addressed as a slave or after it receives a byte.
-  static void TWISendACK() {
+  static inline void TWISendACK() {
     TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
   }
 
   // FOR MR mode. Resume a transfer, ensure that TWI and interrupts are enabled
   // but DO NOT respond with an ACK if the device is addressed as a slave or after
   // it receives a byte.
-  static void TWISendNACK() {
+  static inline void TWISendNACK() {
     TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWIE);
   }
 
