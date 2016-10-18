@@ -1,7 +1,35 @@
 #pragma once
 #include "util.hh"
 
-#include "string.h"
+#include <string.h>
+
+/*
+template<typename Stream, typename T>
+class Format {
+public:
+};
+
+template<uint8_t capacity>
+FString<capacity> & operator << (FString<capacity> &str, const char *cstr) {
+  str.append(cstr);
+  return str;
+}
+
+template<uint8_t capacity>
+FString<capacity> & operator << (FString<capacity> &str, uint8_t num) {
+  return str;
+}
+*/
+/*
+FString<2> str;
+
+str.append('a');
+
+str << 'a';
+str << 2;
+str << Format(2, Format::HEX);
+str << Format::crlf;
+*/
 
 template<uint8_t capacity>
 struct FString {
