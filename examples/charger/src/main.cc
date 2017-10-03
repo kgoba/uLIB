@@ -1,10 +1,10 @@
-#include <timer.hh>
-#include <pins.hh>
-#include <adc.hh>
-
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+
+#include "../../../lib/PTLib/adc.hh"
+#include "../../../lib/PTLib/pins.hh"
+#include "../../../lib/PTLib/timer.hh"
 
 // 0 for normal operation, 1 for debug (blink)
 #define DEBUG             1

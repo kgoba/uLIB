@@ -1,7 +1,7 @@
 #pragma once
-#include "util.hh"
-
 #include <string.h>
+
+#include "../PTLib/util.hh"
 
 /*
 template<typename Stream, typename T>

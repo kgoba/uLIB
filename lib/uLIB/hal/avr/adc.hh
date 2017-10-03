@@ -1,9 +1,9 @@
 #pragma once
 
-#include "util.hh"
-
 #include <avr/io.h>
 #include <avr/sleep.h>
+
+#include "../PTLib/util.hh"
 
 template<class ADCPeriph, byte channel>
 class ADCChannel {

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "util.hh"
-#include "queue.hh"
-
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <util/twi.h>
+
+#include "../PTLib/queue.hh"
+#include "../uLIB/util.hh"
 
 // See http://www.chrisherring.net/all/tutorial-interrupt-driven-twi-interface-for-avr-part1/
 

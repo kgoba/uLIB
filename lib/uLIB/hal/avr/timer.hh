@@ -1,9 +1,8 @@
 #pragma once
 
-#include "util.hh"
-#include "pins.hh"
-
 #include <avr/io.h>
+#include "../uLIB/pins.hh"
+#include "../uLIB/util.hh"
 
 #define TIMER0_SETUP(mode, prescaler) \
 { \

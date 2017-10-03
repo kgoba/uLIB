@@ -1,7 +1,7 @@
-#include <serial.hh>
-#include <stream.hh>
-#include <timer.hh>
-#include <pins.hh>
+#include "../../../lib/PTLib/pins.hh"
+#include "../../../lib/PTLib/serial.hh"
+#include "../../../lib/PTLib/stream.hh"
+#include "../../../lib/PTLib/timer.hh"
 
 const long baudrate  = 9600;
 const word timeoutRX = 500;     // in multiples of 10 us

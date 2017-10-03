@@ -1,9 +1,8 @@
 #pragma once
 
-#include "util.hh"
-
 #include <avr/io.h>
 #include <avr/sleep.h>
+#include "../uLIB/util.hh"
 
 class SysClk {
 public:

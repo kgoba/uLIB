@@ -37,3 +37,7 @@
 /Release/
 
 .pioenvs
+
+.cproject
+.project
+.settings/
